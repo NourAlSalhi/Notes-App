@@ -1,16 +1,8 @@
 'use client';
-
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-}
-
-// Temporary mock notes list (normally you'd get from DB or localStorage)
-const mockNotes: Note[] = [
+const mockNotes: NoteDetails[] = [
   { id: 1, title: 'First Note', content: 'This is the full content of the first note.' },
   { id: 2, title: 'Second Note', content: 'This is the full content of the second note.' },
 ];
@@ -18,7 +10,7 @@ const mockNotes: Note[] = [
 export default function NoteDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [note, setNote] = useState<Note | null>(null);
+  const [note, setNote] = useState<NoteDetails | null>(null);
 
   useEffect(() => {
     const noteId = Number(id);

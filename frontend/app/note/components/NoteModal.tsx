@@ -2,32 +2,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-interface Note {
-  _id: string;
-  title: string;
-  content: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface NoteModalProps {
-  note: Note | null; 
-  onClose: () => void;
-  onSave: (noteData: { title: string; content: string }, id?: string) => Promise<void>; // onSave now takes optional ID
-}
 
 export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
   const [title, setTitle] = useState(note?.title || "");
   const [content, setContent] = useState(note?.content || "");
-  const [isEditing, setIsEditing] = useState(!!note); // True if note exists (initially in view/edit mode), false for new note
-  const isCreating = !note; // Determine if it's a creation flow
+  const [isEditing, setIsEditing] = useState(!!note);
+  const isCreating = !note;
 
   useEffect(() => {
-    // Reset state when a different note is passed or when modal is opened/closed
     setTitle(note?.title || "");
     setContent(note?.content || "");
-    setIsEditing(!!note); // If note exists, start in editing (or view) mode.
-    // If it's a new note, it starts in creation mode, which is "editable".
+    setIsEditing(!!note);
   }, [note]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,16 +22,19 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
       return;
     }
     try {
-      await onSave({ title, content }, note?._id); // Pass _id if editing
-      // onSave handles closing the modal and showing toast for success
+      await onSave({ title, content }, note?._id);
     } catch (error) {
       console.error("Failed to save note:", error);
-      toast.error(`Failed to save note: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error(
+        `Failed to save note: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   };
 
   const handleToggleEdit = () => {
-    setIsEditing(true); // Switch to edit mode
+    setIsEditing(true);
   };
 
   return (
@@ -61,12 +49,19 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
         </button>
 
         <h2 className="text-2xl font-bold mb-4 text-gray-800">
-          {isCreating ? "Create New Note" : (isEditing ? "Edit Note" : "Note Details")}
+          {isCreating
+            ? "Create New Note"
+            : isEditing
+            ? "Edit Note"
+            : "Note Details"}
         </h2>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="title" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="title"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Title
             </label>
             <input
@@ -75,12 +70,15 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              disabled={!isEditing && !isCreating} // Disable if viewing and not editing
+              disabled={!isEditing && !isCreating}
               required
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="content" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="content"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Content
             </label>
             <textarea
@@ -89,13 +87,13 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-none"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              disabled={!isEditing && !isCreating} // Disable if viewing and not editing
+              disabled={!isEditing && !isCreating}
               required
             ></textarea>
           </div>
 
           <div className="flex justify-end gap-3">
-            {!isCreating && !isEditing && ( // Only show "Edit" button in view mode
+            {!isCreating && !isEditing && (
               <button
                 type="button"
                 onClick={handleToggleEdit}
@@ -105,7 +103,7 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
               </button>
             )}
 
-            {(isCreating || isEditing) && ( // Show "Save" button in create or edit mode
+            {(isCreating || isEditing) && (
               <button
                 type="submit"
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -122,10 +120,20 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
               {isCreating || isEditing ? "Cancel" : "Close"}
             </button>
           </div>
-          {note && !isCreating && ( // Display createdAt/updatedAt only for existing notes
+          {note && !isCreating && (
             <div className="mt-4 text-sm text-gray-500">
-              <p>Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'N/A'}</p>
-              <p>Updated: {note.updatedAt ? new Date(note.updatedAt).toLocaleString() : 'N/A'}</p>
+              <p>
+                Created:{" "}
+                {note.createdAt
+                  ? new Date(note.createdAt).toLocaleString()
+                  : "N/A"}
+              </p>
+              <p>
+                Updated:{" "}
+                {note.updatedAt
+                  ? new Date(note.updatedAt).toLocaleString()
+                  : "N/A"}
+              </p>
             </div>
           )}
         </form>

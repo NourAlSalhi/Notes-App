@@ -6,23 +6,12 @@ import { API_BASE_URL } from "@/data";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-interface Note {
-  _id: string;
-  title: string;
-  content: string;
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  __v?: number;
-}
-
 export default function HomePage() {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
   const router = useRouter();
 
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null); // For viewing/editing
+  const [notes, setNotes] = useState<Notes[]>([]);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -31,8 +20,8 @@ export default function HomePage() {
       if (!token) {
         console.warn("No authentication token found. Please log in.");
         setLoading(false);
-        toast.error("Please log in to view your notes.");
-        router.push("/login");
+         toast.error("Please log in to view your notes.");
+        router.push('/login');
         return;
       }
 
@@ -51,11 +40,7 @@ export default function HomePage() {
         setNotes(data);
       } catch (err) {
         console.error("Error fetching notes:", err);
-        toast.error(
-          `Failed to fetch notes: ${
-            err instanceof Error ? err.message : String(err)
-          }`
-        );
+        toast.error(`Failed to fetch notes: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setLoading(false);
       }
@@ -70,18 +55,14 @@ export default function HomePage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setSelectedNote(null);
+    setSelectedNote(null); 
   };
 
-  const handleSave = async (
-    newNoteData: { title: string; content: string },
-    id?: string
-  ) => {
+  const handleSave = async (newNoteData: { title: string; content: string }, id?: string) => {
     if (!token) {
       toast.error("Authentication required to save notes.");
       return;
     }
-
     try {
       let res;
       let savedNote: Note;
@@ -112,17 +93,13 @@ export default function HomePage() {
         savedNote = await res.json();
         setNotes((prevNotes) => [...prevNotes, savedNote]);
         toast.success("Note created successfully!");
-        closeModal();
+        closeModal(); 
         return;
       }
       closeModal();
     } catch (err) {
       console.error("Error saving note:", err);
-      toast.error(
-        `Failed to save note: ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      );
+      toast.error(`Failed to save note: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -147,11 +124,7 @@ export default function HomePage() {
       toast.success("Note deleted successfully!");
     } catch (err) {
       console.error("Error deleting note:", err);
-      toast.error(
-        `Failed to delete note: ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      );
+      toast.error(`Failed to delete note: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -166,9 +139,7 @@ export default function HomePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.length === 0 ? (
-            <p className="col-span-full text-center text-gray-500">
-              No notes found. Click the '+' button to create one!
-            </p>
+            <p className="col-span-full text-center text-gray-500">No notes found. Click the '+' button to create one!</p>
           ) : (
             notes.map((note) => (
               <NoteCard

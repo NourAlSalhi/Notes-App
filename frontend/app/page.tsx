@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import NoteCard from "./note/components/NoteCard";
 import NoteModal from "./note/components/NoteModal";
 import { API_BASE_URL } from "@/data";
-import toast from "react-hot-toast";
+import { toast } from "@/lib/react-hot-toast";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {

@@ -1,7 +1,7 @@
 // ./note/components/NoteModal.tsx
 "use client";
 import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import { toast } from "@/lib/react-hot-toast";
 
 export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
   const [title, setTitle] = useState(note?.title || "");

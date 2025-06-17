@@ -1,71 +1,133 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-
+// ./note/components/NoteModal.tsx
+"use client";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 interface Note {
-  id?: number;
+  _id: string;
   title: string;
   content: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export default function NoteModal({
-  note,
-  onClose,
-  onSave,
-}: {
-  note: Note | null;
+interface NoteModalProps {
+  note: Note | null; 
   onClose: () => void;
-  onSave: (note: Note) => void;
-}) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  onSave: (noteData: { title: string; content: string }, id?: string) => Promise<void>; // onSave now takes optional ID
+}
+
+export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
+  const [title, setTitle] = useState(note?.title || "");
+  const [content, setContent] = useState(note?.content || "");
+  const [isEditing, setIsEditing] = useState(!!note); // True if note exists (initially in view/edit mode), false for new note
+  const isCreating = !note; // Determine if it's a creation flow
 
   useEffect(() => {
-    if (note) {
-      setTitle(note.title);
-      setContent(note.content);
-    } else {
-      setTitle('');
-      setContent('');
-    }
+    // Reset state when a different note is passed or when modal is opened/closed
+    setTitle(note?.title || "");
+    setContent(note?.content || "");
+    setIsEditing(!!note); // If note exists, start in editing (or view) mode.
+    // If it's a new note, it starts in creation mode, which is "editable".
   }, [note]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ id: note?.id, title, content });
+    if (!title.trim() || !content.trim()) {
+      toast.error("Title and content cannot be empty.");
+      return;
+    }
+    try {
+      await onSave({ title, content }, note?._id); // Pass _id if editing
+      // onSave handles closing the modal and showing toast for success
+    } catch (error) {
+      console.error("Failed to save note:", error);
+      toast.error(`Failed to save note: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleToggleEdit = () => {
+    setIsEditing(true); // Switch to edit mode
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-md">
-        <h3 className="text-lg font-bold mb-4">{note ? 'Edit Note' : 'Create Note'}</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          {isCreating ? "Create New Note" : (isEditing ? "Edit Note" : "Note Details")}
+        </h2>
+
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="title" className="block text-gray-700 text-sm font-bold mb-2">
+              Title
+            </label>
             <input
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
+              type="text"
+              id="title"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={!isEditing && !isCreating} // Disable if viewing and not editing
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Content</label>
+          <div className="mb-6">
+            <label htmlFor="content" className="block text-gray-700 text-sm font-bold mb-2">
+              Content
+            </label>
             <textarea
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg h-24 resize-none"
+              id="content"
+              rows={6}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-none"
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              disabled={!isEditing && !isCreating} // Disable if viewing and not editing
               required
-            />
+            ></textarea>
           </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-600">
-              Cancel
-            </button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-              {note ? 'Save Changes' : 'Create'}
+
+          <div className="flex justify-end gap-3">
+            {!isCreating && !isEditing && ( // Only show "Edit" button in view mode
+              <button
+                type="button"
+                onClick={handleToggleEdit}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                Edit
+              </button>
+            )}
+
+            {(isCreating || isEditing) && ( // Show "Save" button in create or edit mode
+              <button
+                type="submit"
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                Save
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              {isCreating || isEditing ? "Cancel" : "Close"}
             </button>
           </div>
+          {note && !isCreating && ( // Display createdAt/updatedAt only for existing notes
+            <div className="mt-4 text-sm text-gray-500">
+              <p>Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'N/A'}</p>
+              <p>Updated: {note.updatedAt ? new Date(note.updatedAt).toLocaleString() : 'N/A'}</p>
+            </div>
+          )}
         </form>
       </div>
     </div>

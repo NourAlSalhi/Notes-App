@@ -1,27 +1,38 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import NoteCard from "./note/components/NoteCard";
 import NoteModal from "./note/components/NoteModal";
 import { API_BASE_URL } from "@/data";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface Note {
-  id: number;
+  _id: string;
   title: string;
   content: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export default function HomePage() {
-  const token = localStorage.getItem("token");
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const router = useRouter();
 
   const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null); // For viewing/editing
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchNotes = async () => {
       if (!token) {
+        console.warn("No authentication token found. Please log in.");
+        setLoading(false);
+        toast.error("Please log in to view your notes.");
+        router.push("/login");
         return;
       }
 
@@ -32,17 +43,25 @@ export default function HomePage() {
             Authorization: `Bearer ${token}`,
           },
         });
-        if (!res.ok) throw new Error("Failed to fetch notes");
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to fetch notes: ${res.status} ${errorText}`);
+        }
         const data = await res.json();
         setNotes(data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching notes:", err);
+        toast.error(
+          `Failed to fetch notes: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
       } finally {
         setLoading(false);
       }
     };
     fetchNotes();
-  }, []);
+  }, [token]);
 
   const openModal = (note?: Note) => {
     setSelectedNote(note || null);
@@ -54,55 +73,85 @@ export default function HomePage() {
     setSelectedNote(null);
   };
 
-  const handleSave = async (newNote: { title: string; content: string }) => {
-    if (selectedNote) {
-      try {
-        const res = await fetch(`${API_BASE_URL}/notes/${selectedNote.id}`, {
+  const handleSave = async (
+    newNoteData: { title: string; content: string },
+    id?: string
+  ) => {
+    if (!token) {
+      toast.error("Authentication required to save notes.");
+      return;
+    }
+
+    try {
+      let res;
+      let savedNote: Note;
+
+      if (id) {
+        res = await fetch(`${API_BASE_URL}/notes/${id}`, {
           method: "PUT",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(newNote),
+          body: JSON.stringify(newNoteData),
         });
         if (!res.ok) throw new Error("Failed to update note");
-        const updatedNote = await res.json();
-        setNotes(
-          notes.map((n) => (n.id === selectedNote.id ? updatedNote : n))
-        );
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      try {
-        const res = await fetch(`${API_BASE_URL}/notes`, {
+        savedNote = await res.json();
+        setNotes(notes.map((n) => (n._id === id ? savedNote : n)));
+        toast.success("Note updated successfully!");
+      } else {
+        res = await fetch(`${API_BASE_URL}/notes`, {
           method: "POST",
-         headers: {
+          headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(newNote),
+          body: JSON.stringify(newNoteData),
         });
         if (!res.ok) throw new Error("Failed to create note");
-        const createdNote = await res.json();
-        setNotes([...notes, createdNote]);
-      } catch (err) {
-        console.error(err);
+        savedNote = await res.json();
+        setNotes((prevNotes) => [...prevNotes, savedNote]);
+        toast.success("Note created successfully!");
+        closeModal();
+        return;
       }
+      closeModal();
+    } catch (err) {
+      console.error("Error saving note:", err);
+      toast.error(
+        `Failed to save note: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
     }
-    closeModal();
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
+    if (!token) {
+      toast.error("Authentication required to delete notes.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this note?")) {
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/notes/${id}`, {
         method: "DELETE",
         headers: {
-            Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) throw new Error("Failed to delete note");
-      setNotes(notes.filter((n) => n.id !== id));
+      setNotes(notes.filter((n) => n._id !== id));
+      toast.success("Note deleted successfully!");
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting note:", err);
+      toast.error(
+        `Failed to delete note: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
     }
   };
 
@@ -116,14 +165,24 @@ export default function HomePage() {
         <p className="text-center text-gray-600">Loading notes...</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {notes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onEdit={() => openModal(note)}
-              onDelete={() => handleDelete(note.id)}
-            />
-          ))}
+          {notes.length === 0 ? (
+            <p className="col-span-full text-center text-gray-500">
+              No notes found. Click the '+' button to create one!
+            </p>
+          ) : (
+            notes.map((note) => (
+              <NoteCard
+                key={note._id}
+                note={note}
+                onView={() => openModal(note)}
+                onEdit={() => {
+                  setSelectedNote(note);
+                  setIsModalOpen(true);
+                }}
+                onDelete={() => handleDelete(note._id)}
+              />
+            ))
+          )}
         </div>
       )}
 

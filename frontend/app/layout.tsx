@@ -8,9 +8,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-gray-100">
         {children}
-        <Toaster />
+        <Toaster position="bottom-left"/>
       </body>
     </html>
   );

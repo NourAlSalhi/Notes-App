@@ -7,7 +7,6 @@ interface Notes {
   updatedAt?: string;
   __v?: number;
 }
-
 interface Note {
   _id: string;
   title: string;
@@ -15,7 +14,6 @@ interface Note {
   createdAt?: string;
   updatedAt?: string;
 }
-
 interface NoteModalProps {
   note: Note | null;
   onClose: () => void;
@@ -24,16 +22,20 @@ interface NoteModalProps {
     id?: string
   ) => Promise<void>;
 }
-
 interface NoteCardProps {
   note: Note;
   onView: (note: Note) => void;
   onEdit: (note: Note) => void;
   onDelete: (id: string) => void;
 }
-
 interface NoteDetails {
   id: number;
   title: string;
   content: string;
+}
+interface ConfirmationModalProps {
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isOpen: boolean;
 }

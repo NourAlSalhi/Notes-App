@@ -1,4 +1,3 @@
-// ./note/components/NoteModal.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { toast } from "@/lib/react-hot-toast";
@@ -38,8 +37,11 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+    <div  className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      onClick={onClose}>
+      <div  className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg relative overflow-y-auto max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -106,7 +108,7 @@ export default function NoteModal({ note, onClose, onSave }: NoteModalProps) {
             {(isCreating || isEditing) && (
               <button
                 type="submit"
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               >
                 Save
               </button>

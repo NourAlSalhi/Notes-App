@@ -8,7 +8,7 @@ interface UseNotesResult {
   notes: Note[];
   loading: boolean;
   fetchNotes: () => Promise<void>;
-  handleSave: (noteData: { title: string; content: string }, id?: string) => Promise<void>;
+  handleSave: (noteData: { title: string; content: string }, id?: string) => Promise<Note>;
   handleDelete: (id: string) => Promise<void>;
 }
 
@@ -57,10 +57,10 @@ export const useNotes = (): UseNotesResult => {
   }, [fetchNotes]);
 
   const handleSave = useCallback(
-    async (noteData: { title: string; content: string }, id?: string) => {
+    async (noteData: { title: string; content: string }, id?: string): Promise<Note> => { 
       if (!token) {
         toast.error("Authentication required to save notes.");
-        return;
+        throw new Error("Authentication token not found.");
       }
       try {
         let res;
@@ -75,7 +75,10 @@ export const useNotes = (): UseNotesResult => {
             },
             body: JSON.stringify(noteData),
           });
-          if (!res.ok) throw new Error("Failed to update note");
+          if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(`Failed to update note: ${res.status} ${errorText}`);
+          }
           savedNote = await res.json();
           setNotes((prevNotes) => prevNotes.map((n) => (n._id === id ? savedNote : n)));
           toast.success("Note updated successfully!");
@@ -89,7 +92,10 @@ export const useNotes = (): UseNotesResult => {
             },
             body: JSON.stringify(noteData),
           });
-          if (!res.ok) throw new Error("Failed to create note");
+          if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(`Failed to create note: ${res.status} ${errorText}`);
+          }
           savedNote = await res.json();
           setNotes((prevNotes) => [...prevNotes, savedNote]);
           toast.success("Note created successfully!");

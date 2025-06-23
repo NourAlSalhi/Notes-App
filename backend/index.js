@@ -11,6 +11,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Configure CORS to allow your frontend's URL
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'; // Set FRONTEND_URL in Render env vars!
+
+app.use(cors({
+  origin: frontendUrl, // Only allow your frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+  credentials: true, // If you send cookies/auth headers
+}));
+
 // Routes
 app.use('/api', authRoutes);
 app.use('/api/notes', noteRoutes);
